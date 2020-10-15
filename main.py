@@ -2,7 +2,7 @@ import sys
 import os
 import argparse
 from scapy.all import*
-os.sys.path.append('/usr/bin/')
+# os.sys.path.append('/usr/bin/')
 
 class Scanner():
     def __init__(self):
@@ -15,11 +15,30 @@ class Scanner():
 
         # if TCP
         # if UDP
+        # if ICMP?
 
-        response = sr1(IP(dst=host) / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
-        print(Ether(response))
+        response = sr1(IP(dst=host, src="192.168.207.102") / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
+        # response = sr(IP(dst=host, src="192.168.207.102") / UDP(dport=port), verbose=False, timeout=0.2)
+        # response is a tuple: (<Results: TCP:1 UDP:0 ICMP:0 Other:0>, <Unanswered: TCP:0 UDP:0 ICMP:0 Other:0>)
+        # print(response)
+        # print("b")
+        # print(type(response[0]))
+        # print(response[0])    # results
+        # print(response[0][0]) # TCP results (tuple of ans/unans?)
+        # print(response[0][0][0])   # sent packet; [0][0][1] is the received packet?
+        if response:
+            # print(response[0][0].summary())    # prints a summary of the response
+            # print(6)
+            # print(response["TCP"].flags)
+            if response["TCP"].flags == "SA":
+                print("{} - Open".format(port))
+            # print(response.summary())
+
 
         # an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
+        # I could also spoof packet src as an extra feature, possibly
+            # maybe not because I need a response to come back to me
+        # include the MAC address of the device if it exists?
 
 
 
@@ -36,43 +55,18 @@ def main():
     # arg_parser.add_argument('-hostRange', type=str, help='The host to scan')
 
     # get pycharm working so I can start it from anywhere
-    # set up github
     # create a new snapshot
 
     # without - it becomes required. And I think positional
     # I can make the args mutex
 
-
     args = arg_parser.parse_args()
-    #
-    # print("host: ", args.host)
-    # print("Port: ", args.port)
 
     # scanner.scan("192.168.207.100", 22)
     scanner.scan(args.host, args.port)
 
 main()
 
-
-
-#
-# def runScan(name):
-#     pass
-#
-#
-# if __name__ == '__main__':
-#     # init argparse
-#     arg_parser = argparse.ArgumentParser(description='Run port scans on host')
-#     arg_parser.add_argument('host', metavar='h', type=str, help='The host to scan')
-#     arg_parser.add_argument('port', metavar='p', type=str, help='The port to scan')
-#
-#     args = arg_parser.parse_args()
-#
-#     print("Host: ", args.path)
-#     print("Port: ", args.port)
-
-
-    # runScan('test')
 
 # kali@IT567-vm-rparish:/opt/pycharm/bin$ sudo nmap -p- 192.168.207.100
 # [sudo] password for kali:
