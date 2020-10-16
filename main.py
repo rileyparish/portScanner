@@ -2,10 +2,11 @@ import sys
 import os
 import argparse
 from scapy.all import*
+import string
 # os.sys.path.append('/usr/bin/')
 
 class Scanner():
-    def __init__(self, hosts, ports, scan_type):
+    def __init__(self, hosts, ports, scan_type="TCP"):
         # hosts is a list of hosts, ports is a list of ports to scan
         self.hosts = hosts
         self.ports = ports
@@ -16,8 +17,14 @@ class Scanner():
     def scanAll(self):
         for host in self.hosts:
             print("Scanning host: {}".format(host))
-            for port in self.ports:
-                self.scan(host, port)
+
+            # if it's ICMP we don't scan ports
+            if self.scan_type == "ICMP":
+                self.scan(host, "-")
+            else:
+                for port in self.ports:
+                    self.scan(host, port)
+
         pass
 
 
@@ -30,22 +37,32 @@ class Scanner():
         # if UDP
         # if ICMP?
 
-        response = sr1(IP(dst=host) / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
-        # response = sr(IP(dst=host, src="192.168.207.102") / UDP(dport=port), verbose=False, timeout=0.2)
-        # response is a tuple: (<Results: TCP:1 UDP:0 ICMP:0 Other:0>, <Unanswered: TCP:0 UDP:0 ICMP:0 Other:0>)
-        # print(response)
-        # print("b")
-        # print(type(response[0]))
-        # print(response[0])    # results
-        # print(response[0][0]) # TCP results (tuple of ans/unans?)
-        # print(response[0][0][0])   # sent packet; [0][0][1] is the received packet?
-        if response:
-            # print(response[0][0].summary())    # prints a summary of the response
-            # print(6)
-            # print(response["TCP"].flags)
-            if response["TCP"].flags == "SA":
-                print("{} - Open".format(port))
-            # print(response.summary())
+        if self.scan_type == "TCP":
+            response = sr1(IP(dst=host) / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
+            # response = sr(IP(dst=host, src="192.168.207.102") / UDP(dport=port), verbose=False, timeout=0.2)
+            # response is a tuple: (<Results: TCP:1 UDP:0 ICMP:0 Other:0>, <Unanswered: TCP:0 UDP:0 ICMP:0 Other:0>)
+            # print(response)
+            # print("b")
+            # print(type(response[0]))
+            # print(response[0])    # results
+            # print(response[0][0]) # TCP results (tuple of ans/unans?)
+            # print(response[0][0][0])   # sent packet; [0][0][1] is the received packet?
+            if response:
+                # print(response[0][0].summary())    # prints a summary of the response
+                # print(6)
+                # print(response["TCP"].flags)
+                if response["TCP"].flags == "SA":
+                    print("{} - Open".format(port))
+                # print(response.summary())
+        elif self.scan_type == "UDP":
+
+            pass
+        elif self.scan_type == "ICMP":
+            response = sr1(IP(dst=host) / ICMP(), verbose=False, timeout=0.2)
+            if response != None:
+                print("\tHost is up")
+
+
 
 
         # an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
@@ -66,6 +83,10 @@ def main():
     arg_parser.add_argument('-host', type=str, help='The host to scan')
     arg_parser.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
     arg_parser.add_argument('-port', type=str, help='A comma-separated list of ports to scan')
+    arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
+
+
+    # todo: make host and hostfile mutex
 
 
 
@@ -99,7 +120,11 @@ def main():
     for i in range(len(ports)):
         ports[i] = int(ports[i])
 
-    scanner = Scanner(hosts, ports, "tmp")
+    # todo: validate the "type" input
+    if args.type != None:
+        scan_type = (args.type).upper()
+
+    scanner = Scanner(hosts, ports, scan_type)
     scanner.scanAll()
     # scanner.scan("192.168.207.100", 22)
 
