@@ -82,6 +82,9 @@ class Scanner():
             if response != None:
                 print("\tHost is up")
                 self.writeToPDF("Host is up", True)
+            else:
+                print("\tHost is not up")
+                self.writeToPDF("Host is not up", True)
 
 
         # an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
@@ -156,9 +159,16 @@ def main():
             ports[i] = int(ports[i])
 
     # todo: validate the "type" input
-    scan_type = ""
+
+    scan_type = "TCP"
     if args.type != None:
-        scan_type = (args.type).upper()
+        # verify that the user provided a valid type
+        if not args.type.upper() in "TCP UDP ICMP":
+            print("Invalid type provided, defaulting to TCP")
+        else:
+            scan_type = (args.type).upper()
+    else:
+        print("Scan type not specified, defaulting to TCP")
 
     scanner = Scanner(hosts, ports, scan_type)
     if args.trace:
