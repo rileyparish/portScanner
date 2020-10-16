@@ -95,8 +95,22 @@ class Scanner():
         # common ports?
 
     def trace(self, host):
-        # traceroute("[" + host + "]", maxttl=20)
-        traceroute(host, maxttl=20)
+        maxttl = 20
+        # get the results of the trace, discard unanswered
+        trace, _ = traceroute(host, maxttl=maxttl)
+        hosts = trace.get_trace()
+        # the structure of the returned type is a bit strange.
+        key = list(hosts.keys())[0]
+        # ips is a dict of tuples of ip addresses that were encountered
+        ips = hosts[key]
+
+        self.writeToPDF("Traceroute for {}:".format(key), False)
+        # print all the IPs to the pdf. The maximum number we could have is maxttl
+        for i in range(1, maxttl):
+            if i in ips:
+                # get the first element of the tuple (ip address)
+                print("{}. {}".format(i, ips[i][0]))
+                self.writeToPDF("{}. {}".format(i, ips[i][0]), False)
 
 
     def writeToPDF(self, text, indent):
