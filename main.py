@@ -15,6 +15,7 @@ class Scanner():
 
     def scanAll(self):
         for host in self.hosts:
+            print("Scanning host: {}".format(host))
             for port in self.ports:
                 self.scan(host, port)
         pass
@@ -63,7 +64,10 @@ def main():
     arg_parser = argparse.ArgumentParser(description='Run port scans on host(s)')
 
     arg_parser.add_argument('-host', type=str, help='The host to scan')
-    arg_parser.add_argument('-port', type=str, help='The port to scan')
+    arg_parser.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
+    arg_parser.add_argument('-port', type=str, help='A comma-separated list of ports to scan')
+
+
 
     # arg_parser.add_argument('-hostsFile', type=str, help='The host to scan')
     # arg_parser.add_argument('-hostRange', type=str, help='The host to scan')
@@ -78,13 +82,22 @@ def main():
 
     # generate the list of hosts to scan
     hosts = []
-    hosts.append(args.host)
+    if args.hostFile != None:
+        # the user provided a file of hosts, parse through it and add each host to the list
+        file = open(args.hostFile, 'r')
+        addresses = file.readlines()
+
+        # add the ip to the list of hosts and remove whitespace
+        for ip in addresses:
+            hosts.append(ip.strip())
+    else:
+        # singular host
+        hosts.append(args.host)
 
     # generate the list of ports to scan
     ports = args.port.split(",")
     for i in range(len(ports)):
         ports[i] = int(ports[i])
-        
 
     scanner = Scanner(hosts, ports, "tmp")
     scanner.scanAll()
