@@ -12,6 +12,7 @@ class Scanner():
         self.ports = ports
         # this is the type of scan to run; TCP, UDP or ICMP
         self.scan_type = scan_type
+        self.traceroute = False
 
 
     def scanAll(self):
@@ -19,37 +20,27 @@ class Scanner():
             print("Scanning host: {}".format(host))
 
             # if it's ICMP we don't scan ports
-            if self.scan_type == "ICMP":
+            if self.traceroute:
+                self.trace(host)
+            elif self.scan_type == "ICMP":
                 self.scan(host, "-")
             else:
                 for port in self.ports:
                     self.scan(host, port)
 
-        pass
+        
 
 
     def scan(self, host, port):
         # this method will take a host and a port and determine if the port is active
-        # ip = "192.168.207.100"
-        # port = 8080
-
-        # if TCP
-        # if UDP
-        # if ICMP?
-
         if self.scan_type == "TCP":
             response = sr1(IP(dst=host) / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
-            # response = sr(IP(dst=host, src="192.168.207.102") / UDP(dport=port), verbose=False, timeout=0.2)
             # response is a tuple: (<Results: TCP:1 UDP:0 ICMP:0 Other:0>, <Unanswered: TCP:0 UDP:0 ICMP:0 Other:0>)
-            # print(response)
-            # print("b")
-            # print(type(response[0]))
             # print(response[0])    # results
             # print(response[0][0]) # TCP results (tuple of ans/unans?)
             # print(response[0][0][0])   # sent packet; [0][0][1] is the received packet?
             if response:
                 # print(response[0][0].summary())    # prints a summary of the response
-                # print(6)
                 # print(response["TCP"].flags)
                 if response["TCP"].flags == "SA":
                     print("\t{} - Open".format(port))
@@ -84,6 +75,10 @@ class Scanner():
         # support IPv6?
         # common ports?
 
+    def trace(self, host):
+        # traceroute("[" + host + "]", maxttl=20)
+        traceroute(host, maxttl=20)
+
 
 
 def main():
@@ -96,6 +91,7 @@ def main():
     arg_parser.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
     arg_parser.add_argument('-port', type=str, help='A comma-separated list of ports to scan')
     arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
+    arg_parser.add_argument('-trace', action="store_true", help="Traceroute for the specified host(s)")
 
 
     # todo: make host and hostfile mutex
@@ -128,15 +124,21 @@ def main():
         hosts.append(args.host)
 
     # generate the list of ports to scan
-    ports = args.port.split(",")
-    for i in range(len(ports)):
-        ports[i] = int(ports[i])
+    if args.port == None:
+        ports = []
+    else:
+        ports = args.port.split(",")
+        for i in range(len(ports)):
+            ports[i] = int(ports[i])
 
     # todo: validate the "type" input
+    scan_type = ""
     if args.type != None:
         scan_type = (args.type).upper()
 
     scanner = Scanner(hosts, ports, scan_type)
+    if args.trace:
+        scanner.traceroute = True
     scanner.scanAll()
     # scanner.scan("192.168.207.100", 22)
 
