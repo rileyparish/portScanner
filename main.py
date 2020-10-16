@@ -5,8 +5,20 @@ from scapy.all import*
 # os.sys.path.append('/usr/bin/')
 
 class Scanner():
-    def __init__(self):
+    def __init__(self, hosts, ports, scan_type):
+        # hosts is a list of hosts, ports is a list of ports to scan
+        self.hosts = hosts
+        self.ports = ports
+        # this is the type of scan to run; TCP, UDP or ICMP
+        self.scan_type = scan_type
+
+
+    def scanAll(self):
+        for host in self.hosts:
+            for port in self.ports:
+                self.scan(host, port)
         pass
+
 
     def scan(self, host, port):
         # this method will take a host and a port and determine if the port is active
@@ -17,7 +29,7 @@ class Scanner():
         # if UDP
         # if ICMP?
 
-        response = sr1(IP(dst=host, src="192.168.207.102") / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
+        response = sr1(IP(dst=host) / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
         # response = sr(IP(dst=host, src="192.168.207.102") / UDP(dport=port), verbose=False, timeout=0.2)
         # response is a tuple: (<Results: TCP:1 UDP:0 ICMP:0 Other:0>, <Unanswered: TCP:0 UDP:0 ICMP:0 Other:0>)
         # print(response)
@@ -39,17 +51,19 @@ class Scanner():
         # I could also spoof packet src as an extra feature, possibly
             # maybe not because I need a response to come back to me
         # include the MAC address of the device if it exists?
+        # support IPv6?
+        # common ports?
 
 
 
 def main():
     # print(os.sys.path)
 
-    scanner = Scanner()
-    arg_parser = argparse.ArgumentParser(description='Run port scans on host')
+
+    arg_parser = argparse.ArgumentParser(description='Run port scans on host(s)')
 
     arg_parser.add_argument('-host', type=str, help='The host to scan')
-    arg_parser.add_argument('-port', type=int, help='The port to scan')
+    arg_parser.add_argument('-port', type=str, help='The port to scan')
 
     # arg_parser.add_argument('-hostsFile', type=str, help='The host to scan')
     # arg_parser.add_argument('-hostRange', type=str, help='The host to scan')
@@ -62,8 +76,20 @@ def main():
 
     args = arg_parser.parse_args()
 
+    # generate the list of hosts to scan
+    hosts = []
+    hosts.append(args.host)
+
+    # generate the list of ports to scan
+    ports = args.port.split(",")
+    for i in range(len(ports)):
+        ports[i] = int(ports[i])
+        
+
+    scanner = Scanner(hosts, ports, "tmp")
+    scanner.scanAll()
     # scanner.scan("192.168.207.100", 22)
-    scanner.scan(args.host, args.port)
+
 
 main()
 
