@@ -52,11 +52,23 @@ class Scanner():
                 # print(6)
                 # print(response["TCP"].flags)
                 if response["TCP"].flags == "SA":
-                    print("{} - Open".format(port))
+                    print("\t{} - Open".format(port))
                 # print(response.summary())
         elif self.scan_type == "UDP":
+            # these are the types of responses to expect from UDP: https://nmap.org/book/scan-methods-udp-scan.html
+            response = sr1(IP(dst=host)/UDP(dport=port), timeout=2, verbose=0)
+            if response == None:
+                # if we got no response back, the request could be filtered out
+                print("\t{} - No response; Open | filtered".format(port))
+            else:
+                if response.haslayer(ICMP):
+                    print("\t{} - Closed".format(port))
+                elif response.haslayer(UDP):
+                    print("\t{} - Open".format(port))
+                else:
+                    # pom piim dtag dtua yang
+                    print("\t{} - Filtered ".format(port))
 
-            pass
         elif self.scan_type == "ICMP":
             response = sr1(IP(dst=host) / ICMP(), verbose=False, timeout=0.2)
             if response != None:
