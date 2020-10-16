@@ -4,6 +4,10 @@ import argparse
 from scapy.all import*
 import string
 # os.sys.path.append('/usr/bin/')
+from fpdf import FPDF
+
+FONT_SIZE = 12
+TITLE_SIZE = 16
 
 class Scanner():
     def __init__(self, hosts, ports, scan_type="TCP"):
@@ -14,10 +18,17 @@ class Scanner():
         self.scan_type = scan_type
         self.traceroute = False
 
+        self.pdf_file = FPDF()
+        self.pdf_file.set_font("Arial", size = 12)
+        self.pdf_file.add_page()
+        self.pdf_file.cell(200, 10, txt = "Results of Scan:", ln = 1, align = 'C')
+        self.pdf_file.cell(200, 10, txt = "", ln = 1, align = 'C')
+
 
     def scanAll(self):
         for host in self.hosts:
             print("Scanning host: {}".format(host))
+            self.writeToPDF("Scanning host: {}".format(host), False)
 
             # if it's ICMP we don't scan ports
             if self.traceroute:
@@ -28,8 +39,9 @@ class Scanner():
                 for port in self.ports:
                     self.scan(host, port)
 
-        
-
+        # the scan is over, output the PDF file
+        self.pdf_file.output("scanReport.pdf")
+        print("PDF report created at \'scanReport.pdf\'")
 
     def scan(self, host, port):
         # this method will take a host and a port and determine if the port is active
@@ -44,6 +56,7 @@ class Scanner():
                 # print(response["TCP"].flags)
                 if response["TCP"].flags == "SA":
                     print("\t{} - Open".format(port))
+                    self.writeToPDF("{} - Open".format(port), True)
                 # print(response.summary())
         elif self.scan_type == "UDP":
             # these are the types of responses to expect from UDP: https://nmap.org/book/scan-methods-udp-scan.html
@@ -51,21 +64,24 @@ class Scanner():
             if response == None:
                 # if we got no response back, the request could be filtered out
                 print("\t{} - No response; Open | filtered".format(port))
+                self.writeToPDF("{} - No response; Open | filtered".format(port), True)
             else:
                 if response.haslayer(ICMP):
                     print("\t{} - Closed".format(port))
+                    self.writeToPDF("\t{} - Closed".format(port), True)
                 elif response.haslayer(UDP):
                     print("\t{} - Open".format(port))
+                    self.writeToPDF("{} - Open".format(port), True)
                 else:
-                    # pom piim dtag dtua yang
+                    # pom piim dtag jaag dtua yang
                     print("\t{} - Filtered ".format(port))
+                    self.writeToPDF("{} - Filtered ".format(port), True)
 
         elif self.scan_type == "ICMP":
             response = sr1(IP(dst=host) / ICMP(), verbose=False, timeout=0.2)
             if response != None:
                 print("\tHost is up")
-
-
+                self.writeToPDF("Host is up", True)
 
 
         # an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
@@ -80,12 +96,20 @@ class Scanner():
         traceroute(host, maxttl=20)
 
 
+    def writeToPDF(self, text, indent):
+        # create a cell
+        if indent:
+            # this creates a cell of whitespace
+            self.pdf_file.cell(10, 5, txt="", align="L")
+        self.pdf_file.multi_cell(0, 5, txt = text, align = 'L')
+
+
 
 def main():
     # print(os.sys.path)
 
 
-    arg_parser = argparse.ArgumentParser(description='Run port scans on host(s)')
+    arg_parser = argparse.ArgumentParser(description='Run port scans on host(s). Must run as root.')
 
     arg_parser.add_argument('-host', type=str, help='The host to scan')
     arg_parser.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
