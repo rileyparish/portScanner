@@ -126,14 +126,19 @@ class Scanner():
 def main():
     arg_parser = argparse.ArgumentParser(description='Run port scans on host(s). Must run as root.')
 
-    arg_parser.add_argument('-host', type=str, help='The host to scan. A single ip address, or a network represented in cidr notation')
-    arg_parser.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
+    host_group = arg_parser.add_mutually_exclusive_group(required=True)
+    host_group.add_argument('-host', type=str, help='The host to scan. A single ip address, or a network represented in cidr notation')
+    host_group.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
 
-    arg_parser.add_argument('-port', type=str, help='A comma-separated list of ports to scan. Inputting "default" here will scan the most commonly used ports')
+    trace_group = arg_parser.add_mutually_exclusive_group(required=False)
+    trace_group.add_argument('-port', type=str, help='A comma-separated list of ports to scan. Inputting "default" here will scan the most commonly used ports')
+    trace_group.add_argument('-trace', action="store_true", help="Traceroute for the specified host(s)")
+
     arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
-    arg_parser.add_argument('-trace', action="store_true", help="Traceroute for the specified host(s)")
 
     # todo: make host and hostfile mutex
+
+    # host_group.add_argument('--foo', action='store_true')
 
     args = arg_parser.parse_args()
 
@@ -171,7 +176,7 @@ def main():
     scan_type = "TCP"
     if args.type != None:
         # verify that the user provided a valid type
-        if not args.type.upper() in "TCP UDP":
+        if not args.type.upper() in "TCP UDP ICMP":
             print("Invalid type provided, defaulting to TCP")
         else:
             scan_type = (args.type).upper()
