@@ -27,9 +27,9 @@ If you're doing a TCP or UDP scan, you must provide a list of ports to scan usin
 
 ## Examples:
 
-*sudo python3 main.py -host 192.168.42.0/24 -port 22,8080,5900*
+*sudo python3 scanner.py -host 192.168.42.0/24 -port 22,8080,5900*
 
-*sudo python3 main.py -hostFile hosts.txt -port 22,8080,5900 -type UDP*
+*sudo python3 scanner.py -hostFile hosts.txt -port 22,8080,5900 -type UDP*
 
-*sudo python3 main.py -host www.google.com -trace*
+*sudo python3 scanner.py -host www.google.com -trace*
 
