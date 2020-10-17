@@ -5,9 +5,7 @@ from scapy.all import*
 import string
 # os.sys.path.append('/usr/bin/')
 from fpdf import FPDF
-
-FONT_SIZE = 12
-TITLE_SIZE = 16
+from ipaddress import IPv4Network
 
 class Scanner():
     def __init__(self, hosts, ports, scan_type="TCP"):
@@ -93,6 +91,7 @@ class Scanner():
         # include the MAC address of the device if it exists?
         # support IPv6?
         # common ports?
+        # sniffing?
 
     def trace(self, host):
         maxttl = 20
@@ -116,23 +115,23 @@ class Scanner():
     def writeToPDF(self, text, indent):
         # create a cell
         if indent:
-            # this creates a cell of whitespace
+            # this creates a leading cell of whitespace
             self.pdf_file.cell(10, 5, txt="", align="L")
         self.pdf_file.multi_cell(0, 5, txt = text, align = 'L')
 
 
 
 def main():
-    # print(os.sys.path)
-
-
     arg_parser = argparse.ArgumentParser(description='Run port scans on host(s). Must run as root.')
 
-    arg_parser.add_argument('-host', type=str, help='The host to scan')
+    arg_parser.add_argument('-host', type=str, help='The host to scan. A single ip address, or a network represented in cidr notation')
     arg_parser.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
-    arg_parser.add_argument('-port', type=str, help='A comma-separated list of ports to scan')
+
+    arg_parser.add_argument('-port', type=str, help='A comma-separated list of ports to scan. Inputting "default" here will scan the most commonly used ports')
     arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
     arg_parser.add_argument('-trace', action="store_true", help="Traceroute for the specified host(s)")
+
+
 
 
     # todo: make host and hostfile mutex
@@ -145,10 +144,12 @@ def main():
     # get pycharm working so I can start it from anywhere
     # create a new snapshot
 
-    # without - it becomes required. And I think positional
+    # without "-" it becomes required. And I think positional
     # I can make the args mutex
 
     args = arg_parser.parse_args()
+
+
 
     # generate the list of hosts to scan
     hosts = []
@@ -161,18 +162,24 @@ def main():
         for ip in addresses:
             hosts.append(ip.strip())
     else:
-        # singular host
-        hosts.append(args.host)
+        # it's not coming from a file, determine if it's in cidr notation or not
+        if "/" in args.host:
+            addresses = IPv4Network(args.host)
+            for host in addresses:
+                hosts.append(host.compressed)
+        else:
+            # just scan the single host that was provided
+            hosts.append(args.host)
 
     # generate the list of ports to scan
     if args.port == None:
         ports = []
+    elif args.port == "default":
+        ports = [21, 22, 25, 53, 80, 110, 123, 143, 443, 465, 631, 993, 995]
     else:
         ports = args.port.split(",")
         for i in range(len(ports)):
             ports[i] = int(ports[i])
-
-    # todo: validate the "type" input
 
     scan_type = "TCP"
     if args.type != None:
@@ -188,7 +195,7 @@ def main():
     if args.trace:
         scanner.traceroute = True
     scanner.scanAll()
-    # scanner.scan("192.168.207.100", 22)
+
 
 
 main()
