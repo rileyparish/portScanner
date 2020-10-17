@@ -3,7 +3,6 @@ import os
 import argparse
 from scapy.all import*
 import string
-# os.sys.path.append('/usr/bin/')
 from fpdf import FPDF
 from ipaddress import IPv4Network
 
@@ -16,6 +15,7 @@ class Scanner():
         self.scan_type = scan_type
         self.traceroute = False
 
+        # initialize the pdf object
         self.pdf_file = FPDF()
         self.pdf_file.set_font("Arial", size = 12)
         self.pdf_file.add_page()
@@ -24,6 +24,7 @@ class Scanner():
 
 
     def scanAll(self):
+        # scans the whole list of provided hosts and ports
         for host in self.hosts:
             print("Scanning host: {}".format(host))
             self.writeToPDF("Scanning host: {}".format(host), False)
@@ -46,16 +47,17 @@ class Scanner():
         if self.scan_type == "TCP":
             response = sr1(IP(dst=host) / TCP(dport=port, flags="S"), verbose=False, timeout=0.2)
             # response is a tuple: (<Results: TCP:1 UDP:0 ICMP:0 Other:0>, <Unanswered: TCP:0 UDP:0 ICMP:0 Other:0>)
-            # print(response[0])    # results
-            # print(response[0][0]) # TCP results (tuple of ans/unans?)
-            # print(response[0][0][0])   # sent packet; [0][0][1] is the received packet?
             if response:
-                # print(response[0][0].summary())    # prints a summary of the response
-                # print(response["TCP"].flags)
                 if response["TCP"].flags == "SA":
                     print("\t{} - Open".format(port))
-                    self.writeToPDF("{} - Open".format(port), True)
-                # print(response.summary())
+                    self.writeToPDF("{} - Open".format(port), True, "green")
+                    # print(response.summary())
+                else:
+                    print("\t{} - Closed".format(port))
+                    self.writeToPDF("{} - Closed".format(port), True, "red")
+            else:
+                print("\t{} - Closed".format(port))
+                self.writeToPDF("{} - Closed".format(port), True, "red")
         elif self.scan_type == "UDP":
             # these are the types of responses to expect from UDP: https://nmap.org/book/scan-methods-udp-scan.html
             response = sr1(IP(dst=host)/UDP(dport=port), timeout=2, verbose=0)
@@ -66,39 +68,30 @@ class Scanner():
             else:
                 if response.haslayer(ICMP):
                     print("\t{} - Closed".format(port))
-                    self.writeToPDF("\t{} - Closed".format(port), True)
+                    self.writeToPDF("\t{} - Closed".format(port), True, "red")
                 elif response.haslayer(UDP):
                     print("\t{} - Open".format(port))
-                    self.writeToPDF("{} - Open".format(port), True)
+                    self.writeToPDF("{} - Open".format(port), True, "green")
                 else:
                     # pom piim dtag jaag dtua yang
                     print("\t{} - Filtered ".format(port))
-                    self.writeToPDF("{} - Filtered ".format(port), True)
+                    self.writeToPDF("{} - Filtered ".format(port), True, "red")
 
         elif self.scan_type == "ICMP":
             response = sr1(IP(dst=host) / ICMP(), verbose=False, timeout=0.2)
             if response != None:
                 print("\tHost is up")
-                self.writeToPDF("Host is up", True)
+                self.writeToPDF("Host is up", True, "green")
             else:
                 print("\tHost is not up")
-                self.writeToPDF("Host is not up", True)
-
-
-        # an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
-        # I could also spoof packet src as an extra feature, possibly
-            # maybe not because I need a response to come back to me
-        # include the MAC address of the device if it exists?
-        # support IPv6?
-        # common ports?
-        # sniffing?
+                self.writeToPDF("Host is not up", True, "red")
 
     def trace(self, host):
         maxttl = 20
         # get the results of the trace, discard unanswered
         trace, _ = traceroute(host, maxttl=maxttl)
         hosts = trace.get_trace()
-        # the structure of the returned type is a bit strange.
+        # the structure of the returned type is a bit strange. The dictionary of IPs is associated with a key
         key = list(hosts.keys())[0]
         # ips is a dict of tuples of ip addresses that were encountered
         ips = hosts[key]
@@ -112,7 +105,16 @@ class Scanner():
                 self.writeToPDF("{}. {}".format(i, ips[i][0]), False)
 
 
-    def writeToPDF(self, text, indent):
+    def writeToPDF(self, text, indent, color="black"):
+        if color == "black":
+            self.pdf_file.set_text_color(0, 0, 0)
+        elif color=="red":
+            self.pdf_file.set_text_color(255, 0, 0)
+        elif color=="green":
+            self.pdf_file.set_text_color(0, 255, 0)
+
+
+
         # create a cell
         if indent:
             # this creates a leading cell of whitespace
@@ -131,24 +133,9 @@ def main():
     arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
     arg_parser.add_argument('-trace', action="store_true", help="Traceroute for the specified host(s)")
 
-
-
-
     # todo: make host and hostfile mutex
 
-
-
-    # arg_parser.add_argument('-hostsFile', type=str, help='The host to scan')
-    # arg_parser.add_argument('-hostRange', type=str, help='The host to scan')
-
-    # get pycharm working so I can start it from anywhere
-    # create a new snapshot
-
-    # without "-" it becomes required. And I think positional
-    # I can make the args mutex
-
     args = arg_parser.parse_args()
-
 
 
     # generate the list of hosts to scan
@@ -184,7 +171,7 @@ def main():
     scan_type = "TCP"
     if args.type != None:
         # verify that the user provided a valid type
-        if not args.type.upper() in "TCP UDP ICMP":
+        if not args.type.upper() in "TCP UDP":
             print("Invalid type provided, defaulting to TCP")
         else:
             scan_type = (args.type).upper()
@@ -215,3 +202,12 @@ main()
 # MAC Address: B8:CA:3A:78:37:C6 (Dell)
 #
 # Nmap done: 1 IP address (1 host up) scanned in 16.51 seconds
+
+
+# an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
+# I could also spoof packet src as an extra feature, possibly
+# maybe not because I need a response to come back to me
+# include the MAC address of the device if it exists?
+# support IPv6?
+# common ports?
+# sniffing?
