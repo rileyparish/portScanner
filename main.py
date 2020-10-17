@@ -113,14 +113,11 @@ class Scanner():
         elif color=="green":
             self.pdf_file.set_text_color(0, 255, 0)
 
-
-
         # create a cell
         if indent:
             # this creates a leading cell of whitespace
             self.pdf_file.cell(10, 5, txt="", align="L")
         self.pdf_file.multi_cell(0, 5, txt = text, align = 'L')
-
 
 
 def main():
@@ -136,9 +133,6 @@ def main():
 
     arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
 
-    # todo: make host and hostfile mutex
-
-    # host_group.add_argument('--foo', action='store_true')
 
     args = arg_parser.parse_args()
 
@@ -189,30 +183,4 @@ def main():
     scanner.scanAll()
 
 
-
 main()
-
-
-# kali@IT567-vm-rparish:/opt/pycharm/bin$ sudo nmap -p- 192.168.207.100
-# [sudo] password for kali:
-# Starting Nmap 7.80 ( https://nmap.org ) at 2020-10-14 00:05 EDT
-# Nmap scan report for dell.veracitynetworks.net (192.168.207.100)
-# Host is up (0.0032s latency).
-# Not shown: 65531 closed ports
-# PORT     STATE SERVICE
-# 22/tcp   open  ssh
-# 5900/tcp open  vnc
-# 6543/tcp open  mythtv
-# 8080/tcp open  http-proxy
-# MAC Address: B8:CA:3A:78:37:C6 (Dell)
-#
-# Nmap done: 1 IP address (1 host up) scanned in 16.51 seconds
-
-
-# an extra feature could be stealth scanning: https://null-byte.wonderhowto.com/how-to/build-stealth-port-scanner-with-scapy-and-python-0164779/
-# I could also spoof packet src as an extra feature, possibly
-# maybe not because I need a response to come back to me
-# include the MAC address of the device if it exists?
-# support IPv6?
-# common ports?
-# sniffing?
