@@ -5,6 +5,8 @@ from scapy.all import*
 import string
 from fpdf import FPDF
 from ipaddress import IPv4Network
+import tkinter as tk
+from tkinter import *
 
 class Scanner():
     def __init__(self, hosts, ports, scan_type="TCP"):
@@ -123,7 +125,7 @@ class Scanner():
 def main():
     arg_parser = argparse.ArgumentParser(description='Run port scans on host(s). Must run as root.')
 
-    host_group = arg_parser.add_mutually_exclusive_group(required=True)
+    host_group = arg_parser.add_mutually_exclusive_group(required=False)
     host_group.add_argument('-host', type=str, help='The host to scan. A single ip address, or a network represented in cidr notation')
     host_group.add_argument('-hostFile', type=str, help='A file containing a list of hosts to scan')
 
@@ -132,14 +134,62 @@ def main():
     trace_group.add_argument('-trace', action="store_true", help="Traceroute for the specified host(s)")
 
     arg_parser.add_argument('-type', type=str, help="The type of packets to send (TCP/UDP/ICMP)")
+    arg_parser.add_argument('-gui', action="store_true", help="Run program with a GUI instead of the command line")
 
 
     args = arg_parser.parse_args()
 
+    if args.gui:
+        window = tk.Tk()
+        title = tk.Label(text="Port Scanner")
+        title.pack()
+        host_label = tk.Label(text="Input a host or a network (CIDR notation):")
+        host_entry = tk.Entry()
+        hostfile_label = tk.Label(text="Or input a the path to a file containing hosts:")
+        hostfile_entry = tk.Entry()
+        ports_label = tk.Label(text="Enter a comma-separated list of ports to scan:")
+        ports_entry = tk.Entry()
+        type_label = tk.Label(text="What type of scan to run (TCP/UDP/ICMP):")
+        type_entry = tk.Entry()
+        run_trace = BooleanVar()
+        run_trace.set(False)
+        trace_button = Checkbutton(window, text = "Run traceroute?", variable=run_trace)
 
+        host_label.pack()
+        host_entry.pack()
+        hostfile_label.pack()
+        hostfile_entry.pack()
+        ports_label.pack()
+        ports_entry.pack()
+        type_label.pack()
+        type_entry.pack()
+        trace_button.pack()
+
+        def getGuiInput(event):
+            args.host = host_entry.get()
+            args.hostFile = hostfile_entry.get()
+            args.port = ports_entry.get()
+            args.type = type_entry.get()
+            args.trace = run_trace.get()
+            print(args.trace)
+
+            prepInputAndScan(args)
+
+        button = tk.Button(text="Run scan")
+        button.bind("<Button-1>", getGuiInput)
+        button.pack()
+        window.mainloop()
+
+    # There's no GUI to set up; process input and run the scan:
+    prepInputAndScan(args)
+
+def prepInputAndScan(args):
+    # print("prepping input: {}".format(args.host))
+
+    # return
     # generate the list of hosts to scan
     hosts = []
-    if args.hostFile != None:
+    if args.hostFile != None and args.hostFile != "":
         # the user provided a file of hosts, parse through it and add each host to the list
         file = open(args.hostFile, 'r')
         addresses = file.readlines()
@@ -158,7 +208,7 @@ def main():
             hosts.append(args.host)
 
     # generate the list of ports to scan
-    if args.port == None:
+    if args.port == None or args.port == "":
         ports = []
     elif args.port == "default":
         ports = [21, 22, 25, 53, 80, 110, 123, 143, 443, 465, 631, 993, 995]
@@ -168,7 +218,7 @@ def main():
             ports[i] = int(ports[i])
 
     scan_type = "TCP"
-    if args.type != None:
+    if args.type != None and args.type != "":
         # verify that the user provided a valid type
         if not args.type.upper() in "TCP UDP ICMP":
             print("Invalid type provided, defaulting to TCP")
@@ -181,6 +231,8 @@ def main():
     if args.trace:
         scanner.traceroute = True
     scanner.scanAll()
+
+
 
 
 main()

@@ -24,6 +24,8 @@ If you're doing a TCP or UDP scan, you must provide a list of ports to scan usin
 **-trace**
 > Optionally run traceroute on a host.
 
+**-gui**
+> Run the program with a GUI instead of from the command line.
 
 ## Examples:
 
@@ -32,4 +34,6 @@ If you're doing a TCP or UDP scan, you must provide a list of ports to scan usin
 *sudo python3 scanner.py -hostFile hosts.txt -port 22,8080,5900 -type UDP*
 
 *sudo python3 scanner.py -host www.google.com -trace*
+
+*sudo python3 scanner.py -gui*
 
