@@ -183,10 +183,8 @@ def main():
     # There's no GUI to set up; process input and run the scan:
     prepInputAndScan(args)
 
-def prepInputAndScan(args):
-    # print("prepping input: {}".format(args.host))
 
-    # return
+def prepInputAndScan(args):
     # generate the list of hosts to scan
     hosts = []
     if args.hostFile != None and args.hostFile != "":
@@ -231,8 +229,6 @@ def prepInputAndScan(args):
     if args.trace:
         scanner.traceroute = True
     scanner.scanAll()
-
-
 
 
 main()
