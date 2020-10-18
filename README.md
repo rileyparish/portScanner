@@ -1,6 +1,6 @@
 # Port Scanner
 
-This is a script to run port scans on a network. It can scan a single host, a network, or parse through a list of hosts provided in a file. The user can specify what type of scan to run, be it TCP, UDP, or ICMP. A list of multiple ports can also be specified. The user can optionally elect to run traceroute on hosts. The results of each scan are written to a PDF and output to "scanReport.pdf". *It must be run with python3 and with root/sudo permissions!*
+This is a script to run port scans on a network. It can scan a single host, a network, or parse through a list of hosts provided in a file. The user can specify what type of scan to run, be it TCP, UDP, or ICMP. A list of multiple ports can also be specified. The user can optionally elect to run traceroute on hosts. Run with the -gui flag to open a GUI instead of passing in parameters from the command line. The results of each scan are written to a PDF and output to "scanReport.pdf". *It must be run with python3 and with root/sudo permissions!*
 
 ## Arguments:
 
